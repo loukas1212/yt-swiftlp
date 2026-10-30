@@ -21,8 +21,8 @@
               }
             }
           ],
-          "image-name" : "Arrow 2.svg",
-          "name" : "Arrow 2",
+          "image-name" : "arrow.svg",
+          "name" : "Arrow",
           "position" : {
             "scale" : 0.8,
             "translation-in-points" : [
@@ -49,8 +49,8 @@
     {
       "layers" : [
         {
-          "image-name" : "Rectangle 3 2.svg",
-          "name" : "Rectangle 3 2",
+          "image-name" : "rectangle.svg",
+          "name" : "Rectangle",
           "opacity-specializations" : [
             {
               "value" : 1
