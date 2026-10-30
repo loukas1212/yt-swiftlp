@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']          
+
+permissions:
+  contents: write        
+
+jobs:
+  release:
+    runs-on: macos-latest
+    env:
+      PRODUCT: YT-SwiftLP
+      OUT_NAME: YT-SwiftLP
+      SPARKLE_VERSION: 2.6.4     
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from TAG
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Build the app
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          SU_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
+          SU_FEED_URL: https://github.com/${{ github.repository }}/releases/latest/download/appcast.xml
+        run: ./release.sh -v "$VERSION" -a universal -n "$OUT_NAME" -p "$PRODUCT" -I appicon.icon
+
+      - name: Zipper l'app
+        run: ditto -c -k --sequesterRsrc --keepParent "$OUT_NAME.app" "$OUT_NAME.zip"
+
+      - name: Sign the update
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          curl -L -o sparkle.tar.xz \
+            https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz
+          mkdir sparkle && tar -xf sparkle.tar.xz -C sparkle
+          SIG=$(echo "$SPARKLE_PRIVATE_KEY" | ./sparkle/bin/sign_update --ed-key-file - "$OUT_NAME.zip")
+          echo "SIG=$SIG" >> $GITHUB_ENV
+
+      - name: Create the changelog
+        run: |
+          PREV=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          if [ -n "$PREV" ]; then RANGE="$PREV..$GITHUB_REF_NAME"; else RANGE="$GITHUB_REF_NAME"; fi
+          {
+            echo "<ul>"
+            git log $RANGE --no-merges --pretty=format:'%s' \
+              | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
+                    -e 's|^|<li>|' -e 's|$|</li>|'
+            echo
+            echo "</ul>"
+          } > notes.html
+
+      - name: Create appcast.xml
+        run: |
+          cat > appcast.xml <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>$OUT_NAME</title>
+              <item>
+                <title>Version $VERSION</title>
+                <description><![CDATA[$(cat notes.html)]]></description>
+                <sparkle:version>${{ github.run_number }}</sparkle:version>
+                <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+                <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+                <enclosure
+                  url="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$OUT_NAME.zip"
+                  type="application/octet-stream"
+                  $SIG />
+              </item>
+            </channel>
+          </rss>
+          EOF
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" "$OUT_NAME.zip" appcast.xml \
+            --title "$OUT_NAME $VERSION" \
+            --generate-notes
