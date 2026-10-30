@@ -27,9 +27,9 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
           SU_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
           SU_FEED_URL: https://github.com/${{ github.repository }}/releases/latest/download/appcast.xml
-        run: ./release.sh -v "$VERSION" -a universal -n "$OUT_NAME" -p "$PRODUCT" -I appicon.icon
+        run: bash release.sh -v "$VERSION" -a universal -n "$OUT_NAME" -p "$PRODUCT" -I appicon.icon
 
-      - name: Zipper l'app
+      - name: Zip the app
         run: ditto -c -k --sequesterRsrc --keepParent "$OUT_NAME.app" "$OUT_NAME.zip"
 
       - name: Sign the update
