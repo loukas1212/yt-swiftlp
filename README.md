@@ -42,6 +42,18 @@ v # Stands for "version"
 0 # Incremented with every small feature improvement (example : changing an icon and button style) or minor bug fix
 ```
 
+## Contributing
+Contributions and feedback are always welcome!
+
+However, since this project primarily serves as a personal learning experience for me to pick up Swift, please do not submit PR or contributions for items listed under the "Upcoming Features" section. I'd love to tackle those features myself as part of my learning roadmap.
+
+If you'd like to contribute, feel free to:
+- Report bugs or issues
+- Suggest new ideas not covered in the roadmap
+- Help refactor existing non-roadmap code
+
+Thank you for understanding! ❤️
+
 ## Structure
 
 ```bash
