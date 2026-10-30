@@ -3,7 +3,7 @@ import AppKit
 import Sparkle
 
 @main
-struct Hello: App {
+struct YTSwiftLP: App {
     @State private var dlmodel = DownloadViewModel()
 
     private let updaterController = SPUStandardUpdaterController(
