@@ -2,6 +2,9 @@
 # Usage:
 # ./release.sh [-v version] [-a arm64|x86_64|universal] \
 #   [-n output_name] [-p product] [-i bundle_id] [-I icon.icon]
+#
+# Icon precompile (run locally with the newest Xcode, then commit the result):
+# ./release.sh -C [-I icon.icon]
 
 set -Eeuo pipefail
 cd "$(dirname "$0")"
@@ -12,16 +15,21 @@ OUT_NAME="YT-SwiftLP"
 PRODUCT="YT-SwiftLP"
 BUNDLE_ID=""
 ICON="appicon.icon"
+PRECOMPILE_ONLY=0
+
+# Precompiled icon output (committed to git, used on CI).
+ICON_OUT_DIR="Resources/icon-out"
 
 SU_FEED_URL="${SU_FEED_URL:-}"
 SU_PUBLIC_KEY="${SU_PUBLIC_KEY:-}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 
 usage() {
-  echo "Usage: $0 [-v version] [-a arm64|x86_64|universal] [-n output_name] [-p product] [-i bundle_id] [-I icon.icon]"
+  echo "Usage: $0 [-v version] [-a arm64|x86_64|universal] [-n output_name] [-p product] [-i bundle_id] [-I icon.icon] [-C]"
+  echo "  -C  Compile the .icon into $ICON_OUT_DIR and exit (run locally, then commit)"
 }
 
-while getopts "v:a:n:p:i:I:h" opt; do
+while getopts "v:a:n:p:i:I:Ch" opt; do
   case "$opt" in
     v) VERSION="$OPTARG" ;;
     a) ARCH="$OPTARG" ;;
@@ -29,10 +37,68 @@ while getopts "v:a:n:p:i:I:h" opt; do
     p) PRODUCT="$OPTARG" ;;
     i) BUNDLE_ID="$OPTARG" ;;
     I) ICON="$OPTARG" ;;
+    C) PRECOMPILE_ONLY=1 ;;
     h) usage; exit 0 ;;
     *) usage >&2; exit 2 ;;
   esac
 done
+
+# Run actool on an .icon package: compile_icon <icon-path> <dest-dir> <partial-plist>
+compile_icon() {
+  local icon="$1" dest="$2" partial="$3"
+  local name
+  name="$(basename "$icon" .icon)"
+
+  mkdir -p "$dest"
+  xcrun actool "$icon" \
+    --compile "$dest" \
+    --output-format xml1 \
+    --notices \
+    --warnings \
+    --errors \
+    --output-partial-info-plist "$partial" \
+    --app-icon "$name" \
+    --include-all-app-icons \
+    --enable-on-demand-resources NO \
+    --development-region en \
+    --target-device mac \
+    --minimum-deployment-target 13.0 \
+    --platform macosx
+}
+
+# Resolve and validate an Icon Composer package (sets ICON to an absolute path).
+resolve_icon() {
+  if [[ "$ICON" != *.icon ]] || [ ! -d "$ICON" ]; then
+    echo "Icon must be an existing .icon package: $ICON" >&2
+    exit 1
+  fi
+  ICON="$(cd "$(dirname "$ICON")" && pwd)/$(basename "$ICON")"
+}
+
+# Precompile mode: build the icon once locally and exit.
+if [ "$PRECOMPILE_ONLY" -eq 1 ]; then
+  resolve_icon
+  if ! xcrun --find actool >/dev/null 2>&1; then
+    echo "actool not found. Check your Xcode installation." >&2
+    exit 1
+  fi
+
+  ICON_NAME="$(basename "$ICON" .icon)"
+  rm -rf "$ICON_OUT_DIR"
+  TMP_PLIST="$(mktemp)"
+  echo "Precompiling icon: $ICON_NAME -> $ICON_OUT_DIR"
+  compile_icon "$ICON" "$ICON_OUT_DIR" "$TMP_PLIST"
+  rm -f "$TMP_PLIST"
+
+  if [ ! -f "$ICON_OUT_DIR/Assets.car" ]; then
+    echo "Error: actool did not generate Assets.car." >&2
+    exit 1
+  fi
+
+  echo "Done. Commit these files:"
+  ls -lh "$ICON_OUT_DIR"
+  exit 0
+fi
 
 # Version
 if [ -z "$VERSION" ]; then
@@ -94,19 +160,22 @@ if [ -z "$BUNDLE_ID" ]; then
   BUNDLE_ID="com.example.${SAFE_ID}"
 fi
 
-# Resolve and validate the Icon Composer package.
-if [ -n "$ICON" ]; then
-  if [[ "$ICON" != *.icon ]] || [ ! -d "$ICON" ]; then
-    echo "Icon must be an existing .icon package: $ICON" >&2
-    exit 1
-  fi
-
-  ICON="$(cd "$(dirname "$ICON")" && pwd)/$(basename "$ICON")"
-
+# Decide how the icon will be provided:
+#   precompiled -> use $ICON_OUT_DIR (Assets.car + .icns), no actool needed
+#   actool      -> compile the .icon package during this build
+#   none        -> no icon
+ICON_MODE="none"
+if [ -f "$ICON_OUT_DIR/Assets.car" ]; then
+  ICON_MODE="precompiled"
+  ICON_NAME="$(basename "${ICON:-appicon.icon}" .icon)"
+elif [ -n "$ICON" ]; then
+  resolve_icon
   if ! xcrun --find actool >/dev/null 2>&1; then
     echo "actool not found. Check your Xcode installation." >&2
     exit 1
   fi
+  ICON_MODE="actool"
+  ICON_NAME="$(basename "$ICON" .icon)"
 fi
 
 APP_DIR="$OUT_NAME.app"
@@ -116,7 +185,7 @@ echo "App:          $APP_DIR"
 echo "Version:      $VERSION (build $BUILD_NUMBER)"
 echo "Architecture: $ARCH"
 echo "Bundle ID:    $BUNDLE_ID"
-echo "Icon:         ${ICON:-none}"
+echo "Icon:         $ICON_MODE${ICON:+ ($ICON)}"
 echo
 
 # Build the Swift executable.
@@ -192,56 +261,54 @@ cat > "$APP_DIR/Contents/Info.plist" <<EOF
 </plist>
 EOF
 
-# Compile the Icon Composer asset, if supplied.
+# Set a string key in Info.plist (add it if missing).
+plist_set() {
+  local key="$1" value="$2" plist="$APP_DIR/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist" 2>/dev/null ||
+    /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
+}
 
-# Compile the Icon Composer asset, if supplied.
-if [ -n "$ICON" ]; then
-  ICON_NAME="$(basename "$ICON" .icon)"
-  TEMP_DIR="$(mktemp -d)"
-  trap 'rm -rf "$TEMP_DIR"' EXIT
+# Install the app icon.
+case "$ICON_MODE" in
+  precompiled)
+    echo "Using precompiled icon from $ICON_OUT_DIR"
+    cp "$ICON_OUT_DIR/Assets.car" "$APP_DIR/Contents/Resources/"
+    if [ -f "$ICON_OUT_DIR/$ICON_NAME.icns" ]; then
+      cp "$ICON_OUT_DIR/$ICON_NAME.icns" "$APP_DIR/Contents/Resources/"
+      plist_set CFBundleIconFile "$ICON_NAME"
+    fi
+    plist_set CFBundleIconName "$ICON_NAME"
+    ;;
 
-  mkdir -p "$APP_DIR/Contents/Resources"
+  actool)
+    TEMP_DIR="$(mktemp -d)"
+    trap 'rm -rf "$TEMP_DIR"' EXIT
+    PARTIAL_PLIST="$TEMP_DIR/partial.plist"
 
-  PARTIAL_PLIST="$TEMP_DIR/partial.plist"
+    echo "Compiling Icon Composer icon: $ICON_NAME"
+    compile_icon "$ICON" "$APP_DIR/Contents/Resources" "$PARTIAL_PLIST"
 
-  echo "Compiling Icon Composer icon: $ICON_NAME"
+    # Do not silently ship an app without its compiled icon.
+    if [ ! -f "$APP_DIR/Contents/Resources/Assets.car" ]; then
+      echo "Error: actool did not generate Assets.car." >&2
+      echo "Check the .icon package and your Xcode version." >&2
+      exit 1
+    fi
 
-  xcrun actool "$ICON" \
-    --compile "$APP_DIR/Contents/Resources" \
-    --output-format xml1 \
-    --notices \
-    --warnings \
-    --errors \
-    --output-partial-info-plist "$PARTIAL_PLIST" \
-    --app-icon "$ICON_NAME" \
-    --include-all-app-icons \
-    --enable-on-demand-resources NO \
-    --development-region en \
-    --target-device mac \
-    --minimum-deployment-target 13.0 \
-    --platform macosx
+    # Merge the metadata generated by actool into Info.plist.
+    if [ -f "$PARTIAL_PLIST" ]; then
+      /usr/libexec/PlistBuddy \
+        -c "Merge $PARTIAL_PLIST" \
+        "$APP_DIR/Contents/Info.plist"
+    fi
+    ;;
+esac
 
-  # Do not silently ship an app without its compiled icon.
-  if [ ! -f "$APP_DIR/Contents/Resources/Assets.car" ]; then
-    echo "Error: actool did not generate Assets.car." >&2
-    echo "Check the .icon package and your Xcode version." >&2
-    exit 1
-  fi
-
-  # Merge the metadata generated by actool into Info.plist.
-  if [ -f "$PARTIAL_PLIST" ]; then
-    /usr/libexec/PlistBuddy \
-      -c "Merge $PARTIAL_PLIST" \
-      "$APP_DIR/Contents/Info.plist"
-  fi
-
-  echo "Compiled icon resources:"
-  ls -lh "$APP_DIR/Contents/Resources/Assets.car"
-
-  # Verify the icon name is present in Info.plist.
-  /usr/libexec/PlistBuddy \
-    -c "Print :CFBundleIconName" \
-    "$APP_DIR/Contents/Info.plist"
+if [ "$ICON_MODE" != "none" ]; then
+  echo "Icon resources:"
+  ls -lh "$APP_DIR/Contents/Resources/"
+  echo -n "CFBundleIconName: "
+  /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$APP_DIR/Contents/Info.plist"
 fi
 
 # Sign the completed bundle.
