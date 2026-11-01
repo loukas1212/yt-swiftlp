@@ -15,7 +15,7 @@ struct HomeView: View {
         @Bindable var dlmodel = dlmodel
 
         VStack(spacing: 30) {
-            Label("Welcome to YT-DLP (SwiftUI)", systemImage: "house.fill").font(.title)
+            Label("Welcome to YT-SwiftLP", systemImage: "house.fill").font(.title)
 
             Text(dlmodel.status.message).font(.title3) // The status
 
@@ -50,7 +50,7 @@ struct HomeView: View {
             }
 
             if dlmodel.progress == nil { // URL input field
-                TextField("Video URL", text: $dlmodel.urlText).frame(width: 300).transition(.opacity.combined(with: .scale(scale: 0.4)))
+                TextField("Video URL here", text: $dlmodel.urlText).frame(width: 300).transition(.opacity.combined(with: .scale(scale: 0.4)))
             }
 
             HStack(spacing: 10) { // The buttons
@@ -65,7 +65,7 @@ struct HomeView: View {
 
                 Button("Cancel", systemImage: "xmark") { // Cancel download and infoTask()
                     dlmodel.cancel()
-                }.buttonStyle(.glass)
+                }.buttonStyle(.glass).disabled(dlmodel.isBusy == false)
             }
         }
         .padding()
