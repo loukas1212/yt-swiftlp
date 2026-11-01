@@ -257,6 +257,10 @@ cat > "$APP_DIR/Contents/Info.plist" <<EOF
     <string>$SU_FEED_URL</string>
     <key>SUPublicEDKey</key>
     <string>$SU_PUBLIC_KEY</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <key>SUScheduledCheckInterval</key>
+    <integer>86400</integer>
 </dict>
 </plist>
 EOF
