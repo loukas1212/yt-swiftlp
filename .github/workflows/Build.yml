@@ -1,0 +1,56 @@
+name: Build
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['v*'] # tag go in release.yml, ignore them
+  pull_request:
+  workflow_call: # let release.yml call this workflow
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      PRODUCT: YT-SwiftLP
+      OUT_NAME: YT-SwiftLP
+      SPARKLE_VERSION: 2.6.4  
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Select newest Xcode
+        run: |
+          echo "Installed Xcodes:"
+          ls -d /Applications/Xcode*.app
+          LATEST=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          echo "Using $LATEST"
+          sudo xcode-select -s "$LATEST/Contents/Developer"
+          xcodebuild -version
+      
+      - name: Get version from TAG
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Build the app
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          SU_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
+          SU_FEED_URL: https://github.com/${{ github.repository }}/releases/latest/download/appcast.xml
+        run: bash release.sh -v "$VERSION" -a universal -n "$OUT_NAME" -p "$PRODUCT" -I appicon.icon
+
+      - name: Zip the app
+        run: ditto -c -k --sequesterRsrc --keepParent "$OUT_NAME.app" "$OUT_NAME.zip"
+
+      - name: Upload zipped app
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-zip
+          path: ${{ env.OUT_NAME }}.zip
+          retention-days: 1
+
+        
+
