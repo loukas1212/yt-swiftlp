@@ -9,7 +9,7 @@
 
 ### Fixed
 - Fixed an issue where `Info.plist` was set to the wrong macOS version
-- Fixed an issue where `appcast.xm` was set to the wrong macOS version
+- Fixed an issue where `appcast.xml` was set to the wrong macOS version
 
 ### Others
 - Postponed release of "Output format" option to v1.2 due to critical bugs
