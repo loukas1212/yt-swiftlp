@@ -15,7 +15,7 @@ jobs:
 
   release:
     needs: build
-    runs-on: macos-latest
+    runs-on: xcode-27
     env:
       OUT_NAME: YT-SwiftLP
       SPARKLE_VERSION: 2.6.4  

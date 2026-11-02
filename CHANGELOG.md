@@ -4,7 +4,12 @@
 
 ### Changed
 - Reworking changelogs system to use the `CHANGELOG.md` file
-- Reworking jobs inside the github repo
+- Reworking workflows inside the github repo
+- Changed workflows on the github repo to target macOS 27 instead of 26
+
+### Fixed
+- Fixed an issue where `Info.plist` was set to the wrong macOS version
+- Fixed an issue where `appcast.xm` was set to the wrong macOS version
 
 ### Others
 - Postponed release of "Output format" option to v1.2 due to critical bugs
