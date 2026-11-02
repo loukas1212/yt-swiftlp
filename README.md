@@ -13,7 +13,7 @@ A Swift/SwiftUI macOS application built to make using yt-dlp easier!
 
 ## Features
 
-As this is version 1.0, this project is Work In Progress (WIP). However, here is a list of current features and what is coming in the future:
+As this is version 1.x, this project is Work In Progress (WIP). However, here is a list of current features and what is coming in the future:
 
 #### Current Features
 - Auto-update system from the [Release](https://github.com/loukas1212/yt-swiftlp/releases) page (using the [Sparkle Project](https://sparkle-project.org/))
@@ -21,14 +21,14 @@ As this is version 1.0, this project is Work In Progress (WIP). However, here is
 - Audio-only download
 - Video metadata embedding
 - Show video thumbnail/title when downloading
+- Changelog system using `CHANGELOG.md` file (v1.1)
 
 #### Upcoming Features
-- Audio and video output format selection (comming in v1.1)
-- UI customization and redesign (planned for v1.2)
-- Changing the changelog system to use a `CHANGELOG.md` file (planned for v1.2)
-- A button to install `yt-dlp` directly from the application (planned for v1.3)
+- Audio and video output format selection (comming in v1.2)
+- UI customization and redesign (planned for v1.3)
 - Audio and video output codec selection (planned for v1.3)
--   Support for beta updates, latest commit instead of latest release (planned for v1.3)
+- Support for beta updates, latest commit instead of latest release (planned for v1.3)
+- A button to install `yt-dlp` directly from the application (planned for v1.4)
 - Downloaded video/audio history (planned for v1.4)
 
 ## Versioning System
