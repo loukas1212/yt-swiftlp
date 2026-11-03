@@ -1,5 +1,10 @@
 # Changelogs
 
+## v1.1.1
+
+### Fixed
+- Fixing changelogs not generating properly for `appcast.xml`
+
 ## v1.1.0
 
 ### Changed

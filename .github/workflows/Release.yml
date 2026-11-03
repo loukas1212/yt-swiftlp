@@ -44,7 +44,6 @@ jobs:
  
       - name: Create release notes from CHANGELOG.md
         run: |
-          # Extract the matching version section as Markdown
           awk -v ver="v$VERSION" '
             /^##[ \t]/ {
               if (found) exit
@@ -57,34 +56,17 @@ jobs:
               print
             }
           ' CHANGELOG.md > notes.md
+
           if [ ! -s notes.md ]; then
             echo "::warning::No '## v$VERSION' section found in CHANGELOG.md"
             echo "No notes for this version." > notes.md
           fi
 
-          # Convert Markdown to HTML for Sparkle
-          awk '
-            /^\* / || /^- / {
-              if (!list) {
-                print "<ul>"
-                list = 1
-              }
-              sub(/^(\*|-)[ ]+/, "")
-              print "<li>" $0 "</li>"
-              next
-            }
-            {
-              if (list) {
-                print "</ul>"
-                list = 0
-              }
-              if ($0 != "") print "<p>" $0 "</p>"
-            }
-            END {
-              if (list) print "</ul>"
-            }
-          ' notes.md > notes.html
- 
+      - name: Convert Markdown to HTML
+        run: |
+          brew install cmark
+          cmark notes.md > notes.html
+
       - name: Create appcast.xml
         run: |
           cat > appcast.xml <<EOF
