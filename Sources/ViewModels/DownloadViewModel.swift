@@ -61,6 +61,7 @@ final class DownloadViewModel {
     func start(
         destination: URL,
         quality: VideoQuality,
+        videoFormat: VideoOutputFormat,
         cookieArguments: [String] = []
     ) {
         guard downloadTask == nil else { return }
@@ -93,6 +94,7 @@ final class DownloadViewModel {
                     url: url,
                     destination: destination,
                     qualitySelector: quality.qualitySelector,
+                    videoOutputFormat: videoFormat.videoFormatSelector,
                     cookieArguments: cookieArguments
                 )
                 for try await event in events {

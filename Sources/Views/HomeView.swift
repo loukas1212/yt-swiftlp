@@ -10,6 +10,7 @@ struct HomeView: View {
     @AppStorage("cookieSource") private var cookieSource = "none"
     @AppStorage("cookiePath") private var cookiePath = ""
     @AppStorage("videoQuality") private var quality: VideoQuality = .p1080
+    @AppStorage("videoFormat") private var videoFormat: VideoOutputFormat = .mp4
 
     var body: some View {
         @Bindable var dlmodel = dlmodel
@@ -58,6 +59,7 @@ struct HomeView: View {
                     dlmodel.start( // Start the download
                         destination: destination,
                         quality: quality,
+                        videoFormat: videoFormat,
                         cookieArguments: makeCookieArguments(source: cookieSource, path: cookiePath)
                     )
                     dlmodel.loadInfo(cookieArguments: makeCookieArguments(source: cookieSource, path: cookiePath)) // Get info about the video 

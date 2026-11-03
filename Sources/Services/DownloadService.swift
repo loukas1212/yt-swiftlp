@@ -66,6 +66,7 @@ struct DownloadService: Sendable {
         url: URL,
         destination: URL,
         qualitySelector: String?,
+        videoOutputFormat: String?,
         cookieArguments: [String] = []
     ) -> [String] {
         // Getting settings from "AppStorage"
@@ -84,6 +85,10 @@ struct DownloadService: Sendable {
 
         if let qualitySelector {
             arguments += ["-f", qualitySelector]
+        }
+
+        if let videoOutputFormat {
+            arguments += ["--merge-output-format", videoOutputFormat]
         }
 
         if isAudioOnly == true { // For "audio only" setting
@@ -105,6 +110,7 @@ struct DownloadService: Sendable {
         url: URL,
         destination: URL,
         qualitySelector: String? = nil,
+        videoOutputFormat: String?,
         cookieArguments: [String] = []
     ) -> AsyncThrowingStream<DownloadEvent, Error> {
         AsyncThrowingStream { continuation in
@@ -119,6 +125,7 @@ struct DownloadService: Sendable {
                 url: url,
                 destination: destination,
                 qualitySelector: qualitySelector,
+                videoOutputFormat: videoOutputFormat,
                 cookieArguments: cookieArguments
             )
             process.environment = YtdlpLocator.processEnvironment()

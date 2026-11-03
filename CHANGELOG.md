@@ -1,5 +1,11 @@
 # Changelogs
 
+## v1.2.0
+
+### Added
+- Added an option to select the video output format (.mp4, .mkv, .webm, .mov, .avi, .flv)
+- Added small animations to some button inside the home and settings tab
+
 ## v1.1.1
 
 ### Fixed
