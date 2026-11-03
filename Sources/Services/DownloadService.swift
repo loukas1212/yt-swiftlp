@@ -74,7 +74,6 @@ struct DownloadService: Sendable {
         let isEmbedMetadata = UserDefaults.standard.bool(forKey: "isEmbedMetadata")
 
         var arguments = [
-            "--no-playlist",
             "--newline",
             "--progress",
             "--progress-template", "download:download:%(progress.downloaded_bytes)s|%(progress.total_bytes)s|%(progress.total_bytes_estimate)s|%(progress.status)s|%(info.format_id)s",

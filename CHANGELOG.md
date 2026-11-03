@@ -4,7 +4,14 @@
 
 ### Added
 - Added an option to select the video output format (.mp4, .mkv, .webm, .mov, .avi, .flv)
-- Added small animations to some button inside the home and settings tab
+- Added small animations to some button inside the home tab
+- Added a button in "About" tab to open the project's repository
+
+### Removed
+- Removed a unused arguments ("--no-playlist")
+
+### Others
+- Added features in "Upcoming Features"
 
 ## v1.1.1
 

@@ -24,6 +24,14 @@ struct AboutView: View {
 
             Text("Made with ♥ by Loukas").font(.title2)
 
+        Link(destination: URL(string: "https://github.com/loukas1212/yt-swiftlp")!) {
+            HStack {
+                Image(systemName: "link.circle").font(.title3)
+                Text("Open the repository").font(.title3)
+            }
+        }
+
+
             VStack(alignment: .center, spacing: 5) {
                 Label("This is the first release, bugs and errors can occur.", systemImage: "exclamationmark.triangle")
                 Text("not all the functions are here, please wait for the next updates.")

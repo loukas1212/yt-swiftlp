@@ -55,7 +55,7 @@ struct HomeView: View {
             }
 
             HStack(spacing: 10) { // The buttons
-                Button("Download", systemImage: "arrow.down.circle") {
+                Button("Download", systemImage: dlmodel.isBusy ? "arrow.down.circle.fill" : "arrow.down.circle") {
                     dlmodel.start( // Start the download
                         destination: destination,
                         quality: quality,
@@ -63,7 +63,7 @@ struct HomeView: View {
                         cookieArguments: makeCookieArguments(source: cookieSource, path: cookiePath)
                     )
                     dlmodel.loadInfo(cookieArguments: makeCookieArguments(source: cookieSource, path: cookiePath)) // Get info about the video 
-                }.disabled(dlmodel.isBusy).buttonStyle(.glass)
+                }.disabled(dlmodel.isBusy).buttonStyle(.glass).contentTransition(.symbolEffect(.replace))
 
                 Button("Cancel", systemImage: "xmark") { // Cancel download and infoTask()
                     dlmodel.cancel()

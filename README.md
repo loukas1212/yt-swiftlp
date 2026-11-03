@@ -22,14 +22,17 @@ As this is version 1.x, this project is Work In Progress (WIP). However, here is
 - Video metadata embedding
 - Show video thumbnail/title when downloading
 - Changelog system using `CHANGELOG.md` file (v1.1)
+- Video output format selection (v1.2)
 
 #### Upcoming Features
-- Audio and video output format selection (comming in v1.2)
-- UI customization and redesign (planned for v1.3)
-- Audio and video output codec selection (planned for v1.3)
-- Support for beta updates, latest commit instead of latest release (planned for v1.3)
-- A button to install `yt-dlp` directly from the application (planned for v1.4)
-- Downloaded video/audio history (planned for v1.4)
+
+- Audio output format selection
+- UI customization and redesign
+- Audio and video output codec selection
+- Support for beta updates, latest commit instead of latest release
+- A button to install `yt-dlp` directly from the application 
+- Metadata edition
+- Better UI for playlist/albums download
 
 ## Versioning System
 
